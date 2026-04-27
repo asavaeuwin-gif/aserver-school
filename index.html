@@ -418,6 +418,131 @@ body.dark .ann.dept   { background:#1c2f3b; border-color:#1e4a6b; }
 .stk-spinner.show { display:block; }
 .stk-spinner .spin { width:40px; height:40px; border:4px solid rgba(255,255,255,.3); border-top-color:#fff; border-radius:50%; animation:spin .8s linear infinite; margin:0 auto 12px; }
 @keyframes spin { to { transform:rotate(360deg); } }
+
+/* ── LOADING SCREEN ── */
+#loadingScreen {
+  position:fixed;inset:0;z-index:99999;
+  background:linear-gradient(135deg,#1e3a8a 0%,#1e40af 50%,#7c3aed 100%);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  transition:opacity .5s ease;
+}
+#loadingScreen.hidden { opacity:0; pointer-events:none; }
+.ls-logo { font-size:72px; margin-bottom:16px; animation:logoBounce 1s ease infinite alternate; }
+@keyframes logoBounce { from{transform:translateY(0)} to{transform:translateY(-12px)} }
+.ls-title { font-size:28px; font-weight:800; color:#fff; margin-bottom:6px; }
+.ls-sub { font-size:14px; color:rgba(255,255,255,.7); margin-bottom:40px; }
+.ls-bar { width:200px; height:4px; background:rgba(255,255,255,.2); border-radius:20px; overflow:hidden; }
+.ls-bar-fill { height:100%; background:#fff; border-radius:20px; animation:lsLoad 1.8s ease forwards; }
+@keyframes lsLoad { from{width:0%} to{width:100%} }
+.ls-dots { display:flex; gap:8px; margin-top:20px; }
+.ls-dot { width:8px; height:8px; background:rgba(255,255,255,.5); border-radius:50%; animation:lsDot .8s ease infinite alternate; }
+.ls-dot:nth-child(2) { animation-delay:.2s; }
+.ls-dot:nth-child(3) { animation-delay:.4s; }
+@keyframes lsDot { from{opacity:.3;transform:scale(.8)} to{opacity:1;transform:scale(1)} }
+
+/* ── BETTER AUTH SCREEN ── */
+#authScreen {
+  background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #312e81 100%);
+  min-height: 100vh;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+}
+#authScreen::before {
+  content: '';
+  position: absolute;
+  width: 600px; height: 600px;
+  background: radial-gradient(circle, rgba(124,58,237,.3) 0%, transparent 70%);
+  top: -200px; right: -200px;
+  border-radius: 50%;
+}
+#authScreen::after {
+  content: '';
+  position: absolute;
+  width: 400px; height: 400px;
+  background: radial-gradient(circle, rgba(30,64,175,.4) 0%, transparent 70%);
+  bottom: -100px; left: -100px;
+  border-radius: 50%;
+}
+#authScreen.show { display: flex; }
+.auth-card {
+  width: 100%; max-width: 460px;
+  background: rgba(255,255,255,.97);
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: 0 25px 60px rgba(0,0,0,.4);
+  position: relative; z-index: 1;
+  animation: authSlideIn .5s ease;
+}
+@keyframes authSlideIn { from{opacity:0;transform:translateY(30px)} to{opacity:1;transform:translateY(0)} }
+.auth-hd {
+  background: linear-gradient(135deg, #1e3a8a, #7c3aed);
+  padding: 36px 32px 28px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+.auth-hd::before {
+  content: '';
+  position: absolute;
+  width: 200px; height: 200px;
+  background: rgba(255,255,255,.08);
+  border-radius: 50%;
+  top: -60px; right: -60px;
+}
+.auth-logo {
+  font-size: 52px;
+  background: rgba(255,255,255,.15);
+  width: 80px; height: 80px;
+  border-radius: 20px;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 16px;
+  backdrop-filter: blur(10px);
+  border: 2px solid rgba(255,255,255,.2);
+}
+.auth-hd h1 { color: #fff; font-size: 24px; font-weight: 800; margin-bottom: 6px; }
+.auth-hd p  { color: rgba(255,255,255,.75); font-size: 13px; }
+.auth-body  { padding: 28px 32px 32px; }
+
+/* ── DEMO MODE BUTTON ── */
+.demo-btn {
+  display: block; width: 100%;
+  background: linear-gradient(135deg, #059669, #10b981);
+  color: #fff; border: none; border-radius: var(--rs);
+  padding: 13px; font-size: 14px; font-weight: 700;
+  cursor: pointer; margin-bottom: 16px;
+  transition: all .2s; text-align: center;
+}
+.demo-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(5,150,105,.4); }
+.demo-select {
+  display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap;
+}
+.demo-role {
+  flex: 1; min-width: 80px;
+  padding: 8px 4px; border: 2px solid var(--border);
+  border-radius: var(--rs); background: var(--s2);
+  font-size: 12px; font-weight: 600; cursor: pointer;
+  text-align: center; transition: all .2s; color: var(--text);
+}
+.demo-role:hover, .demo-role.active { border-color: var(--primary); background: #dbeafe; color: var(--primary); }
+
+/* ── PAGE TRANSITIONS ── */
+.page { animation: pageIn .25s ease; }
+@keyframes pageIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+
+/* ── BETTER CARDS ── */
+.stat-card-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px,1fr)); gap: 14px; margin-bottom: 20px; }
+.big-stat { background:#fff; border-radius:var(--r); padding:20px; box-shadow:var(--sh); border:1px solid var(--border); text-align:center; transition:transform .2s,box-shadow .2s; }
+.big-stat:hover { transform:translateY(-2px); box-shadow:var(--shm); }
+.big-stat .bs-num { font-size:32px; font-weight:800; margin-bottom:4px; }
+.big-stat .bs-lbl { font-size:12px; color:var(--muted); font-weight:500; }
+
+/* ── SUCCESS ANIMATION ── */
+.success-check { display:inline-block; animation:checkPop .4s cubic-bezier(.175,.885,.32,1.275); }
+@keyframes checkPop { from{transform:scale(0)} to{transform:scale(1)} }
 ::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:10px}
 </style>
 
@@ -426,11 +551,11 @@ body.dark .ann.dept   { background:#1c2f3b; border-color:#1e4a6b; }
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Aserver School">
 <meta name="application-name" content="Aserver School">
-<meta name="description" content="Aserver Tech School — School Management System v3.2">
+<meta name="description" content="Aserver Tech School — School Management System v3.2 — Presentation Ready">
 <link rel="manifest" href="data:application/json,{
   %22name%22:%22Aserver Tech School%22,
   %22short_name%22:%22ATS%22,
-  %22description%22:%22School Management System v3.2%22,
+  %22description%22:%22School Management System v3.2 — Presentation Ready%22,
   %22start_url%22:%22.%22,
   %22display%22:%22standalone%22,
   %22background_color%22:%22%231e3a8a%22,
@@ -477,7 +602,7 @@ body.dark .ann.dept   { background:#1c2f3b; border-color:#1e4a6b; }
     <div class="auth-hd">
       <div class="auth-logo">🎓</div>
       <h1>Aserver Tech School</h1>
-      <p>School Management System v3.2</p>
+      <p>School Management System v3.2 — Presentation Ready</p>
     </div>
     <div class="auth-body">
       <div class="auth-tabs">
@@ -589,6 +714,19 @@ body.dark .ann.dept   { background:#1c2f3b; border-color:#1e4a6b; }
 </script>
 
 <!-- PWA Install Banner -->
+
+<!-- Loading Screen -->
+<div id="loadingScreen">
+  <div class="ls-logo">🎓</div>
+  <div class="ls-title">Aserver Tech School</div>
+  <div class="ls-sub">School Management System v3.2</div>
+  <div class="ls-bar"><div class="ls-bar-fill"></div></div>
+  <div class="ls-dots">
+    <div class="ls-dot"></div>
+    <div class="ls-dot"></div>
+    <div class="ls-dot"></div>
+  </div>
+</div>
 <div id="pwaInstallBanner">
   <div class="pwa-inner">
     <div class="pwa-icon">🎓</div>
@@ -778,9 +916,9 @@ const MENUS = {
 // SEED
 // ═══════════════════════════════════════════════════════════
 function seed() {
-  if (DB.get('seeded9')) return;
+  if (DB.get('seeded11')) return;
   Object.keys(DEFAULTS).forEach(k => DB.set(k, DEFAULTS[k]));
-  DB.set('seeded9', true);
+  DB.set('seeded11', true);
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -1074,7 +1212,7 @@ function generateReportCard(studentName) {
   doc.text('ASERVER TECH SCHOOL', W/2, 16, {align:'center'});
   doc.setFontSize(11); doc.setFont('helvetica','normal');
   doc.text('Academic Report Card — Semester 1, 2025', W/2, 26, {align:'center'});
-  doc.text('School Management System v3.2', W/2, 34, {align:'center'});
+  doc.text('School Management System v3.2 — Presentation Ready', W/2, 34, {align:'center'});
   doc.setFillColor(239,246,255); doc.roundedRect(14,48,W-28,36,3,3,'F');
   doc.setTextColor(15,23,42);
   doc.setFontSize(13); doc.setFont('helvetica','bold'); doc.text(s.name, 20, 60);
@@ -1323,9 +1461,13 @@ function getPage(id) {
         <div class="sc amber"><div class="sn">KES ${fmt(tp)}</div><div class="sl">Paid</div></div>`;
     }
     const ann=g('announcements');
-    return `
-      <div class="pg-title">Welcome back, ${esc(name)}! 👋</div>
-      <div class="pg-sub">${role} Dashboard — ${new Date().toDateString()}</div>
+    return (()=>{
+      const _h=new Date().getHours();
+      const _gr=_h<12?'Good morning':_h<17?'Good afternoon':'Good evening';
+      const _em=_h<12?'🌅':_h<17?'☀️':'🌙';
+      return `
+      <div class="pg-title">${_gr}, ${esc(name.split(' ')[0])}! ${_em}</div>
+      <div class="pg-sub">${role} Dashboard — ${new Date().toDateString()}</div>`;})() +`
       ${unreadNotifs.length?`<div class="ann urgent" style="margin-bottom:16px;cursor:pointer" onclick="go(\"mynotifications\")">
         <div class="ann-title">🔔 You have ${unreadNotifs.length} unread notification${unreadNotifs.length>1?'s':''}</div>
         <div class="ann-body">Tap to view your notifications</div></div>`:''}
@@ -2074,7 +2216,7 @@ function getPage(id) {
           <div class="spin"></div>
           <div id="stkMsg" style="font-size:13px;opacity:.85">Processing...</div>
         </div>
-        <div id="stkMsg" style="font-size:13px;margin:8px 0;min-height:20px"></div>
+        <div id="stkMsgDisplay" style="font-size:13px;margin:8px 0;min-height:20px"></div>
         <button id="mpesaPayBtn" class="mpesa-btn" onclick="initMpesa()">📲 Send STK Push</button>
         <button id="mpesaReceiptBtn" class="btn btn-ghost btn-sm" style="display:none;margin-top:10px;background:rgba(255,255,255,.2);color:#fff;border-color:rgba(255,255,255,.3)">📄 Download Receipt</button>
       </div>
@@ -2128,12 +2270,97 @@ function getPage(id) {
       </div>`;
   }
 
+
+  // ── IMPORT CSV ──
+  if (id==='importcsv') {
+    return `
+      <div class="pg-title">Import Data 📥</div>
+      <div class="pg-sub">Bulk import students, grades or attendance</div>
+      <div class="quiz-card">
+        <h4>📂 Import Students</h4>
+        <div style="font-size:13px;color:var(--muted);margin-bottom:12px">Upload a CSV with columns: name, email, reg, course, year</div>
+        <input type="file" accept=".csv" onchange="importCSV(this,'students')" style="font-size:13px">
+      </div>
+      <div class="quiz-card">
+        <h4>📊 Import Grades</h4>
+        <div style="font-size:13px;color:var(--muted);margin-bottom:12px">Upload a CSV with columns: student, course, cat, exam</div>
+        <input type="file" accept=".csv" onchange="importCSV(this,'grades')" style="font-size:13px">
+      </div>
+      <div class="quiz-card">
+        <h4>✅ Import Attendance</h4>
+        <div style="font-size:13px;color:var(--muted);margin-bottom:12px">Upload a CSV with columns: student, course, date, status</div>
+        <input type="file" accept=".csv" onchange="importCSV(this,'attendance')" style="font-size:13px">
+      </div>
+      <div class="rcard"><h3>📋 Sample CSV Format</h3>
+        <div style="background:var(--s2);border-radius:var(--rs);padding:12px;font-family:monospace;font-size:12px;color:var(--muted)">
+          name,email,reg,course,year<br>
+          John Doe,john@ats.com,ATS/001/2025,Computer Science,1<br>
+          Jane Smith,jane@ats.com,ATS/002/2025,Medicine,2
+        </div>
+      </div>`;
+  }
+
+  // ── NOTIFICATIONS alias ──
+  if (id==='notifications') { return getPage('mynotifications'); }
   return `<div class="pg-title">Coming Soon</div><p style="color:var(--muted);margin-top:8px">This section is being built.</p>`;
 }
 
 // ═══════════════════════════════════════════════════════════
 // ACTION FUNCTIONS
 // ═══════════════════════════════════════════════════════════
+
+function importCSV(input, type) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const lines = e.target.result.trim().split('\n');
+    const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+    const rows = lines.slice(1).map(l => {
+      const vals = l.split(',');
+      const obj = {};
+      headers.forEach((h,i) => obj[h] = (vals[i]||'').trim());
+      return obj;
+    });
+    if (type === 'students') {
+      const existing = DB.get('students') || g('students');
+      const merged = [...existing];
+      rows.forEach(r => {
+        if (r.name && !merged.find(s => s.name===r.name)) {
+          merged.push({id:Date.now()+Math.random(), name:r.name, email:r.email||'', reg:r.reg||'ATS/NEW/2025', course:r.course||'General', year:parseInt(r.year)||1, fees:'Owing', status:'Active'});
+        }
+      });
+      DB.set('students', merged);
+      toast(rows.length + ' students imported! ✅', 'success');
+    } else if (type === 'grades') {
+      const existing = DB.get('grades') || g('grades');
+      rows.forEach(r => {
+        if (r.student && r.course) {
+          const cat = parseInt(r.cat)||0, exam = parseInt(r.exam)||0, total = cat+exam;
+          const grade = total>=70?'A':total>=60?'B':total>=50?'C':'F';
+          const idx = existing.findIndex(x => x.student===r.student && x.course===r.course);
+          if (idx>=0) existing[idx] = {student:r.student,course:r.course,cat,exam,total,grade};
+          else existing.push({student:r.student,course:r.course,cat,exam,total,grade});
+        }
+      });
+      DB.set('grades', existing);
+      toast(rows.length + ' grade records imported! ✅', 'success');
+    } else if (type === 'attendance') {
+      const existing = DB.get('attendance') || g('attendance');
+      rows.forEach(r => {
+        if (r.student && r.course) {
+          existing.push({student:r.student, course:r.course, date:r.date||new Date().toLocaleDateString(), status:r.status||'Present'});
+        }
+      });
+      DB.set('attendance', existing);
+      toast(rows.length + ' attendance records imported! ✅', 'success');
+    }
+    logAct('Import', rows.length + ' records imported to ' + type);
+    showPage('importcsv');
+  };
+  reader.readAsText(file);
+}
+
 function recordPayment() {
   const amt=parseInt(document.getElementById('payAmt')?.value||0);
   const method=document.getElementById('payMethod')?.value||'M-Pesa';
@@ -2266,7 +2493,7 @@ function initMpesa() {
   // Step 2: Waiting for PIN (3s)
   setTimeout(() => {
     setMpesaStep(3);
-    document.getElementById('stkMsg').textContent = 'Processing payment...';
+    document.getElementById('stkMsgDisplay').textContent = 'Processing payment...';
   }, 5000);
 
   // Step 3: Confirm (2s)
@@ -2294,7 +2521,7 @@ function initMpesa() {
 
     logAct('M-Pesa', 'KES ' + fmt(amount) + ' from ' + phone + ' — Ref: ' + ref);
     setMpesaStep(4);
-    document.getElementById('stkMsg').textContent = '✅ Payment confirmed! Ref: ' + ref;
+    document.getElementById('stkMsgDisplay').textContent = '✅ Payment confirmed! Ref: ' + ref;
     document.getElementById('mpesaPayBtn').disabled = false;
     document.getElementById('mpesaAmount').value = '';
     toast('M-Pesa payment of KES ' + fmt(amount) + ' confirmed! 🎉', 'success');
@@ -2312,6 +2539,48 @@ function setMpesaStep(step) {
     if (i+1 === step) el.classList.add('active');
   });
 }
+
+// ═══════════════════════════════════════════════════════════
+// LOADING SCREEN
+// ═══════════════════════════════════════════════════════════
+function hideLoadingScreen() {
+  const ls = document.getElementById('loadingScreen');
+  if (!ls) return;
+  ls.classList.add('hidden');
+  setTimeout(() => ls.remove(), 500);
+}
+
+// ═══════════════════════════════════════════════════════════
+// DEMO MODE
+// ═══════════════════════════════════════════════════════════
+const DEMO_ACCOUNTS = {
+  admin:    { email:'admin@ats.com',   pass:'admin123' },
+  student:  { email:'alice@ats.com',   pass:'student123' },
+  lecturer: { email:'kamau@ats.com',   pass:'lecturer123' },
+  parent:   { email:'parent@ats.com',  pass:'parent123' }
+};
+function demoLogin(role) {
+  document.querySelectorAll('.demo-role').forEach(b => b.classList.remove('active'));
+  event.target.closest('.demo-role').classList.add('active');
+  const acc = DEMO_ACCOUNTS[role];
+  if (!acc) return;
+  document.getElementById('loginEmail').value = acc.email;
+  document.getElementById('loginPass').value  = acc.pass;
+  setTimeout(() => doLogin(), 300);
+}
+
+// ═══════════════════════════════════════════════════════════
+// BETTER ERROR HANDLING
+// ═══════════════════════════════════════════════════════════
+window.onerror = function(msg, src, line) {
+  console.warn('[ATS Error]', msg, 'at line', line);
+  return true; // prevent default error handling
+};
+window.onunhandledrejection = function(e) {
+  console.warn('[ATS Promise Error]', e.reason);
+  e.preventDefault();
+};
+
 // ═══════════════════════════════════════════════════════════
 // PWA — SERVICE WORKER & INSTALL
 // ═══════════════════════════════════════════════════════════
@@ -2462,6 +2731,7 @@ function requestNotifPermission() {
 // INIT
 // ═══════════════════════════════════════════════════════════
 window.addEventListener('load', () => {
+  setTimeout(hideLoadingScreen, 2000);
   seed();
   applyDarkMode();
   registerServiceWorker();
