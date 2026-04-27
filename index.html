@@ -613,7 +613,7 @@ body.dark .ann.dept   { background:#1c2f3b; border-color:#1e4a6b; }
         <div class="auth-tab active" onclick="switchTab('login')">Login</div>
         <div class="auth-tab" onclick="switchTab('register')">Register</div>
       </div>
-      <div id="loginForm">
+      <div id="loginForm" style="display:block">
         <div class="auth-err" id="loginErr"></div>
         <div class="creds-hint">
           <b>🔑 Default Accounts (click to fill)</b>
@@ -1118,9 +1118,9 @@ const MENUS = {
 // SEED
 // ═══════════════════════════════════════════════════════════
 function seed() {
-  if (DB.get('seeded14')) return;
+  if (DB.get('seeded15')) return;
   Object.keys(DEFAULTS).forEach(k => DB.set(k, DEFAULTS[k]));
-  DB.set('seeded14', true);
+  DB.set('seeded15', true);
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -1174,9 +1174,10 @@ function togglePw(id) {
 }
 function switchTab(t) {
   document.getElementById('loginForm').style.display = t==='login' ? 'block' : 'none';
-  document.getElementById('regForm').style.display   = t==='reg'   ? 'block' : 'none';
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  document.querySelector(`.tab-btn[onclick*="${t}"]`).classList.add('active');
+  document.getElementById('regForm').style.display   = (t==='reg'||t==='register') ? 'block' : 'none';
+  document.querySelectorAll('.auth-tab, .tab-btn').forEach(b => b.classList.remove('active'));
+  const activeTab = document.querySelector(`.auth-tab[onclick*="${t}"], .tab-btn[onclick*="${t}"]`);
+  if (activeTab) activeTab.classList.add('active');
 }
 
 function doLogin() {
@@ -1276,7 +1277,7 @@ function doRegister() {
       if (btn) { btn.disabled=false; btn.textContent='Create Account'; }
       toast('Account created! Welcome ' + name + ' 🎉', 'success');
       switchTab('login');
-      document.getElementById('loginEmail').value = email;
+      setTimeout(()=>{ document.getElementById('loginEmail').value = email; document.getElementById('loginPass').value = pass; }, 100);
       document.getElementById('loginPass').value = pass;
     })
     .catch(err => {
