@@ -829,6 +829,36 @@ function fbSignOut() {
 // ═══════════════════════════════════════════════════════════
 // SYNC LOCAL DATA TO FIREBASE (one-time migration)
 // ═══════════════════════════════════════════════════════════
+async function createDefaultAccounts() {
+  if (DB.get('fbAccountsCreated2')) return;
+  const defaults = [
+    {email:'admin@ats.com',    pass:'admin123',    name:'Admin User',    role:'Admin'},
+    {email:'alice@ats.com',    pass:'student123',  name:'Alice Wanjiru', role:'Student'},
+    {email:'kamau@ats.com',    pass:'lecturer123', name:'Dr. Kamau',     role:'Lecturer'},
+    {email:'parent@ats.com',   pass:'parent123',   name:'Parent User',   role:'Parent', childEmail:'alice@ats.com'},
+    {email:'worker@ats.com',   pass:'worker123',   name:'John Worker',   role:'Worker'},
+  ];
+  for (const acc of defaults) {
+    try {
+      const cred = await auth.createUserWithEmailAndPassword(acc.email, acc.pass);
+      await FDB.set('users/' + cred.user.uid, {
+        uid: cred.user.uid, name: acc.name, email: acc.email,
+        role: acc.role, status: 'Active',
+        childEmail: acc.childEmail || null,
+        createdAt: new Date().toISOString()
+      });
+      await auth.signOut();
+    } catch(e) {
+      // Account may already exist - that's fine
+      if (e.code !== 'auth/email-already-in-use') {
+        console.warn('[ATS] Could not create', acc.email, e.code);
+      }
+    }
+  }
+  DB.set('fbAccountsCreated2', true);
+  console.log('[ATS] Default accounts ready ✅');
+}
+
 async function syncToFirebase() {
   if (DB.get('fbSynced')) return;
   try {
@@ -1088,9 +1118,9 @@ const MENUS = {
 // SEED
 // ═══════════════════════════════════════════════════════════
 function seed() {
-  if (DB.get('seeded12')) return;
+  if (DB.get('seeded14')) return;
   Object.keys(DEFAULTS).forEach(k => DB.set(k, DEFAULTS[k]));
-  DB.set('seeded12', true);
+  DB.set('seeded14', true);
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -1166,12 +1196,12 @@ function doLogin() {
       // Get user profile from Firebase
       let userData = await FDB.get('users/' + uid);
       if (!userData) {
-        // Fallback: check local users
+        // Fallback: check local users and migrate
         seed();
-        userData = g('users').find(u => u.email.toLowerCase() === email.toLowerCase());
-        if (userData) {
-          // Migrate to Firebase
-          await FDB.set('users/' + uid, {...userData, uid});
+        const localUser = g('users').find(u => u.email.toLowerCase() === email.toLowerCase());
+        if (localUser) {
+          userData = {...localUser, uid};
+          await FDB.set('users/' + uid, userData);
         }
       }
       if (!userData) {
@@ -1214,26 +1244,37 @@ function doLogin() {
 }
 
 function doRegister() {
-  const name = document.getElementById('regName').value.trim();
-  const email= document.getElementById('regEmail').value.trim();
-  const pass = document.getElementById('regPass').value;
-  const role = document.getElementById('regRole').value;
-  const errEl= document.getElementById('regErr');
-  const btn  = document.getElementById('regBtn');
-  errEl.style.display = 'none';
-  if (!name||!email||!pass||!role) { errEl.textContent='Fill all fields.'; errEl.style.display='block'; return; }
-  if (pass.length < 6) { errEl.textContent='Password must be 6+ chars.'; errEl.style.display='block'; return; }
+  const name  = document.getElementById('regName')?.value.trim();
+  const email = document.getElementById('regEmail')?.value.trim();
+  const pass  = document.getElementById('regPass')?.value;
+  const pass2 = document.getElementById('regPass2')?.value;
+  const role  = document.getElementById('regRole')?.value;
+  const errEl = document.getElementById('regErr');
+  const btn   = document.getElementById('regBtn');
+  if (errEl) errEl.style.display = 'none';
+  if (!name||!email||!pass||!role) {
+    if(errEl){errEl.textContent='Please fill all fields.';errEl.style.display='block';}
+    toast('Please fill all fields','error'); return;
+  }
+  if (pass.length < 6) {
+    if(errEl){errEl.textContent='Password must be at least 6 characters.';errEl.style.display='block';}
+    toast('Password too short','error'); return;
+  }
+  if (pass2 && pass !== pass2) {
+    if(errEl){errEl.textContent='Passwords do not match.';errEl.style.display='block';}
+    toast('Passwords do not match','error'); return;
+  }
   if (btn) { btn.disabled=true; btn.textContent='Creating account...'; }
 
   fbSignUp(email, pass, name, role)
-    .then(user => {
+    .then(fbUser => {
       // Also save to local
       seed();
       const users = g('users');
-      users.push({id:user.uid, uid:user.uid, name, email, pass, role});
+      users.push({id:fbUser.uid, uid:fbUser.uid, name, email, pass, role});
       DB.set('users', users);
       if (btn) { btn.disabled=false; btn.textContent='Create Account'; }
-      toast('Account created successfully! 🎉', 'success');
+      toast('Account created! Welcome ' + name + ' 🎉', 'success');
       switchTab('login');
       document.getElementById('loginEmail').value = email;
       document.getElementById('loginPass').value = pass;
@@ -2970,6 +3011,9 @@ window.addEventListener('load', () => {
   seed();
   applyDarkMode();
   registerServiceWorker();
+
+  // Create default accounts on first run
+  createDefaultAccounts().catch(e => console.warn('[ATS] Default accounts:', e.message));
 
   // Firebase auth state observer - auto login if session exists
   auth.onAuthStateChanged(async user => {
