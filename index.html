@@ -3,8 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Aserver Tech School — v3.2</title>
+<title>Aserver Tech School — v4.0</title>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 :root {
@@ -551,11 +555,11 @@ body.dark .ann.dept   { background:#1c2f3b; border-color:#1e4a6b; }
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Aserver School">
 <meta name="application-name" content="Aserver School">
-<meta name="description" content="Aserver Tech School — School Management System v3.2 — Presentation Ready">
+<meta name="description" content="Aserver Tech School — School Management System v4.0">
 <link rel="manifest" href="data:application/json,{
   %22name%22:%22Aserver Tech School%22,
   %22short_name%22:%22ATS%22,
-  %22description%22:%22School Management System v3.2 — Presentation Ready%22,
+  %22description%22:%22School Management System v4.0%22,
   %22start_url%22:%22.%22,
   %22display%22:%22standalone%22,
   %22background_color%22:%22%231e3a8a%22,
@@ -602,7 +606,7 @@ body.dark .ann.dept   { background:#1c2f3b; border-color:#1e4a6b; }
     <div class="auth-hd">
       <div class="auth-logo">🎓</div>
       <h1>Aserver Tech School</h1>
-      <p>School Management System v3.2 — Presentation Ready</p>
+      <p>School Management System v4.0</p>
     </div>
     <div class="auth-body">
       <div class="auth-tabs">
@@ -746,6 +750,174 @@ body.dark .ann.dept   { background:#1c2f3b; border-color:#1e4a6b; }
 
 <script>
 'use strict';
+
+// ═══════════════════════════════════════════════════════════
+// FIREBASE CONFIGURATION
+// ═══════════════════════════════════════════════════════════
+const firebaseConfig = {
+  apiKey: "AIzaSyDnzOZajZEanX4cbmYcAIsaBIil7Br-7ow",
+  authDomain: "aserver-tech-school.firebaseapp.com",
+  databaseURL: "https://aserver-tech-school-default-rtdb.firebaseio.com",
+  projectId: "aserver-tech-school",
+  storageBucket: "aserver-tech-school.firebasestorage.app",
+  messagingSenderId: "512491234004",
+  appId: "1:512491234004:web:87ed5fdd3065e4f5b5d141"
+};
+
+firebase.initializeApp(firebaseConfig);
+const auth     = firebase.auth();
+const rtdb     = firebase.database();
+const storage  = firebase.storage();
+
+// ═══════════════════════════════════════════════════════════
+// FIREBASE DATABASE HELPERS
+// ═══════════════════════════════════════════════════════════
+const FDB = {
+  // Write data
+  set(path, data) {
+    return rtdb.ref(path).set(data);
+  },
+  // Update data
+  update(path, data) {
+    return rtdb.ref(path).update(data);
+  },
+  // Read once
+  get(path) {
+    return rtdb.ref(path).once('value').then(snap => snap.val());
+  },
+  // Push new item (auto ID)
+  push(path, data) {
+    return rtdb.ref(path).push(data);
+  },
+  // Delete
+  del(path) {
+    return rtdb.ref(path).remove();
+  },
+  // Listen for realtime changes
+  on(path, cb) {
+    rtdb.ref(path).on('value', snap => cb(snap.val()));
+  },
+  // Stop listening
+  off(path) {
+    rtdb.ref(path).off();
+  }
+};
+
+// ═══════════════════════════════════════════════════════════
+// FIREBASE AUTH FUNCTIONS
+// ═══════════════════════════════════════════════════════════
+function fbSignUp(email, password, name, role) {
+  return auth.createUserWithEmailAndPassword(email, password)
+    .then(cred => {
+      const uid = cred.user.uid;
+      return FDB.set('users/' + uid, {
+        uid, name, email, role,
+        createdAt: new Date().toISOString(),
+        status: 'Active'
+      }).then(() => cred.user);
+    });
+}
+
+function fbSignIn(email, password) {
+  return auth.signInWithEmailAndPassword(email, password);
+}
+
+function fbSignOut() {
+  return auth.signOut();
+}
+
+// ═══════════════════════════════════════════════════════════
+// SYNC LOCAL DATA TO FIREBASE (one-time migration)
+// ═══════════════════════════════════════════════════════════
+async function syncToFirebase() {
+  if (DB.get('fbSynced')) return;
+  try {
+    const data = {
+      students:      g('students'),
+      staff:         g('staff'),
+      grades:        DB.get('grades')      || g('grades'),
+      payments:      DB.get('payments')    || g('payments'),
+      attendance:    DB.get('attendance')  || g('attendance'),
+      announcements: g('announcements'),
+      quizzes:       g('quizzes'),
+      fees:          g('fees'),
+      events:        g('events') || [],
+      routes:        g('routes') || [],
+      timetable:     g('timetable') || [],
+      exams:         g('exams') || [],
+      assignments:   g('assignments') || [],
+      notifications: g('notifications') || [],
+      messages:      DB.get('messages') || [],
+    };
+    await FDB.set('schooldata', data);
+    DB.set('fbSynced', true);
+    console.log('[ATS] Data synced to Firebase ✅');
+  } catch(e) {
+    console.warn('[ATS] Firebase sync failed:', e.message);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// FIREBASE-AWARE DATA GETTER
+// ═══════════════════════════════════════════════════════════
+const _cache = {};
+async function fbGet(key) {
+  try {
+    const val = await FDB.get('schooldata/' + key);
+    if (val) {
+      _cache[key] = Array.isArray(val) ? val : Object.values(val);
+      return _cache[key];
+    }
+  } catch(e) {}
+  return _cache[key] || DB.get(key) || DEFAULTS[key] || [];
+}
+
+async function fbSet(key, data) {
+  _cache[key] = data;
+  DB.set(key, data); // keep local backup
+  try {
+    await FDB.set('schooldata/' + key, data);
+  } catch(e) {
+    console.warn('[ATS] Firebase write failed:', e.message);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// REALTIME LISTENERS
+// ═══════════════════════════════════════════════════════════
+function startRealtimeListeners() {
+  // Listen for new notifications
+  FDB.on('schooldata/notifications', data => {
+    if (!data) return;
+    const notifs = Array.isArray(data) ? data : Object.values(data);
+    DB.set('notifications', notifs);
+    buildNotifs();
+  });
+
+  // Listen for new messages
+  FDB.on('schooldata/messages', data => {
+    if (!data) return;
+    const msgs = Array.isArray(data) ? data : Object.values(data);
+    DB.set('messages', msgs);
+    const ml = document.getElementById('msgList');
+    if (ml) renderMsgs();
+  });
+
+  // Listen for grade updates
+  FDB.on('schooldata/grades', data => {
+    if (!data) return;
+    const grades = Array.isArray(data) ? data : Object.values(data);
+    DB.set('grades', grades);
+    _cache['grades'] = grades;
+  });
+}
+
+function stopRealtimeListeners() {
+  ['notifications','messages','grades'].forEach(k => {
+    try { FDB.off('schooldata/' + k); } catch(e) {}
+  });
+}
+
 
 // ═══════════════════════════════════════════════════════════
 // DATABASE (localStorage wrapper)
@@ -916,9 +1088,9 @@ const MENUS = {
 // SEED
 // ═══════════════════════════════════════════════════════════
 function seed() {
-  if (DB.get('seeded11')) return;
+  if (DB.get('seeded12')) return;
   Object.keys(DEFAULTS).forEach(k => DB.set(k, DEFAULTS[k]));
-  DB.set('seeded11', true);
+  DB.set('seeded12', true);
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -986,21 +1158,59 @@ function doLogin() {
   if (lAttempts >= 5) { errEl.textContent = 'Too many attempts. Refresh.'; errEl.style.display='block'; return; }
   if (!email || !pass) { errEl.textContent = 'Enter email and password.'; errEl.style.display='block'; return; }
   btn.disabled = true; btn.textContent = 'Logging in...';
-  setTimeout(() => {
-    seed();
-    const users = g('users');
-    const user = users.find(u => (u.email.toLowerCase()===email.toLowerCase() || u.name.toLowerCase()===email.toLowerCase()) && u.pass===pass);
-    if (!user) {
+
+  // Try Firebase Auth first
+  fbSignIn(email, pass)
+    .then(async cred => {
+      const uid = cred.user.uid;
+      // Get user profile from Firebase
+      let userData = await FDB.get('users/' + uid);
+      if (!userData) {
+        // Fallback: check local users
+        seed();
+        userData = g('users').find(u => u.email.toLowerCase() === email.toLowerCase());
+        if (userData) {
+          // Migrate to Firebase
+          await FDB.set('users/' + uid, {...userData, uid});
+        }
+      }
+      if (!userData) {
+        errEl.textContent = 'Account not found. Please register.';
+        errEl.style.display = 'block';
+        btn.disabled = false; btn.textContent = 'Login to System';
+        return;
+      }
+      lAttempts = 0; SP = pass;
+      CU = {...userData, uid};
+      btn.disabled = false; btn.textContent = 'Login to System';
+      await syncToFirebase();
+      startRealtimeListeners();
+      loginSuccess(CU);
+    })
+    .catch(async err => {
+      // Firebase failed - try local login as fallback
+      if (err.code === 'auth/network-request-failed' || err.code === 'auth/too-many-requests') {
+        seed();
+        const users = g('users');
+        const user = users.find(u => (u.email.toLowerCase()===email.toLowerCase()) && u.pass===pass);
+        if (user) {
+          lAttempts = 0; SP = pass; CU = user;
+          btn.disabled = false; btn.textContent = 'Login to System';
+          loginSuccess(CU);
+          toast('Offline mode — using local data 📡', 'info');
+          return;
+        }
+      }
       lAttempts++;
-      errEl.textContent = `Invalid credentials. ${5-lAttempts} attempts left.`;
+      let msg = 'Invalid email or password.';
+      if (err.code === 'auth/user-not-found') msg = 'No account found. Please register.';
+      if (err.code === 'auth/wrong-password') msg = 'Wrong password. Try again.';
+      if (err.code === 'auth/invalid-email') msg = 'Invalid email address.';
+      if (err.code === 'auth/too-many-requests') msg = 'Too many attempts. Try again later.';
+      errEl.textContent = msg;
       errEl.style.display = 'block';
       btn.disabled = false; btn.textContent = 'Login to System';
-      return;
-    }
-    lAttempts = 0; SP = pass; CU = user;
-    btn.disabled = false; btn.textContent = 'Login to System';
-    loginSuccess(user);
-  }, 300);
+    });
 }
 
 function doRegister() {
@@ -1009,20 +1219,34 @@ function doRegister() {
   const pass = document.getElementById('regPass').value;
   const role = document.getElementById('regRole').value;
   const errEl= document.getElementById('regErr');
+  const btn  = document.getElementById('regBtn');
   errEl.style.display = 'none';
   if (!name||!email||!pass||!role) { errEl.textContent='Fill all fields.'; errEl.style.display='block'; return; }
   if (pass.length < 6) { errEl.textContent='Password must be 6+ chars.'; errEl.style.display='block'; return; }
-  seed();
-  const users = g('users');
-  if (users.find(u => u.email.toLowerCase()===email.toLowerCase())) {
-    errEl.textContent = 'Email already registered.'; errEl.style.display='block'; return;
-  }
-  const newUser = {id: Date.now(), name, email, pass, role};
-  users.push(newUser);
-  DB.set('users', users);
-  toast('Account created! Please login.', 'success');
-  switchTab('login');
-  document.getElementById('loginEmail').value = email;
+  if (btn) { btn.disabled=true; btn.textContent='Creating account...'; }
+
+  fbSignUp(email, pass, name, role)
+    .then(user => {
+      // Also save to local
+      seed();
+      const users = g('users');
+      users.push({id:user.uid, uid:user.uid, name, email, pass, role});
+      DB.set('users', users);
+      if (btn) { btn.disabled=false; btn.textContent='Create Account'; }
+      toast('Account created successfully! 🎉', 'success');
+      switchTab('login');
+      document.getElementById('loginEmail').value = email;
+      document.getElementById('loginPass').value = pass;
+    })
+    .catch(err => {
+      let msg = 'Registration failed. Try again.';
+      if (err.code === 'auth/email-already-in-use') msg = 'Email already registered. Please login.';
+      if (err.code === 'auth/invalid-email') msg = 'Invalid email address.';
+      if (err.code === 'auth/weak-password') msg = 'Password too weak. Use 6+ characters.';
+      errEl.textContent = msg;
+      errEl.style.display = 'block';
+      if (btn) { btn.disabled=false; btn.textContent='Create Account'; }
+    });
 }
 
 function loginSuccess(user) {
@@ -1042,11 +1266,14 @@ function loginSuccess(user) {
 }
 
 function doLogout() {
-  CU = {}; SP = '';
-  document.getElementById('appScreen').style.display = 'none';
-  document.getElementById('authScreen').classList.add('show');
-  clearInterval(cInt); clearTimeout(iTimer);
-  toast('Logged out successfully.', 'info');
+  stopRealtimeListeners();
+  fbSignOut().catch(()=>{}).finally(() => {
+    CU = {}; SP = '';
+    document.getElementById('appScreen').style.display = 'none';
+    document.getElementById('authScreen').classList.add('show');
+    clearInterval(cInt); clearTimeout(iTimer);
+    toast('Logged out successfully.', 'info');
+  });
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -1161,8 +1388,10 @@ function sendNotification() {
   const type   = document.getElementById('notifType')?.value || 'info';
   if (!title||!body) { toast('Fill title and message','error'); return; }
   const all = DB.get('notifications') || g('notifications') || [];
-  all.unshift({id:Date.now(), title, body, type, time:'Just now', read:false, target, by:CU.name});
+  const newNotif = {id:Date.now(), title, body, type, time:'Just now', read:false, target, by:CU.name};
+  all.unshift(newNotif);
   DB.set('notifications', all);
+  FDB.set('schooldata/notifications', all).catch(()=>{});
   buildNotifs();
   logAct('Notification Sent', `${title} → ${target}`);
   toast('Notification sent! 🔔','success');
@@ -1187,11 +1416,16 @@ function renderMsgs() {
 function sendMsg() {
   const inp = document.getElementById('msgInp');
   if (!inp || !inp.value.trim()) return;
-  const msgs = DB.get('messages') || g('messages') || [];
-  msgs.push({id:Date.now(), from:CU.name, text:inp.value.trim(), time:new Date().toLocaleTimeString()});
-  DB.set('messages', msgs);
+  const msg = {id:Date.now(), from:CU.name, text:inp.value.trim(), time:new Date().toLocaleTimeString()};
+  // Push to Firebase realtime
+  FDB.push('schooldata/messages', msg).catch(() => {
+    // Fallback to local
+    const msgs = DB.get('messages') || [];
+    msgs.push(msg);
+    DB.set('messages', msgs);
+    renderMsgs();
+  });
   inp.value = '';
-  renderMsgs();
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -1212,7 +1446,7 @@ function generateReportCard(studentName) {
   doc.text('ASERVER TECH SCHOOL', W/2, 16, {align:'center'});
   doc.setFontSize(11); doc.setFont('helvetica','normal');
   doc.text('Academic Report Card — Semester 1, 2025', W/2, 26, {align:'center'});
-  doc.text('School Management System v3.2 — Presentation Ready', W/2, 34, {align:'center'});
+  doc.text('School Management System v4.0', W/2, 34, {align:'center'});
   doc.setFillColor(239,246,255); doc.roundedRect(14,48,W-28,36,3,3,'F');
   doc.setTextColor(15,23,42);
   doc.setFontSize(13); doc.setFont('helvetica','bold'); doc.text(s.name, 20, 60);
@@ -2386,6 +2620,7 @@ function saveGrade() {
   const rec={student,course,cat,exam,total,grade:gl};
   if(existing>=0)grades[existing]=rec; else grades.push(rec);
   DB.set('grades',grades);
+  FDB.set('schooldata/grades', grades).catch(()=>{});
   logAct('Grade Saved',`${student} — ${course}: ${total}%`);
   toast(`Grade saved: ${student} — ${total}% (${gl})`,'success');
 }
@@ -2735,6 +2970,26 @@ window.addEventListener('load', () => {
   seed();
   applyDarkMode();
   registerServiceWorker();
+
+  // Firebase auth state observer - auto login if session exists
+  auth.onAuthStateChanged(async user => {
+    if (user && !CU.uid) {
+      // User was previously logged in
+      try {
+        const userData = await FDB.get('users/' + user.uid);
+        if (userData) {
+          CU = {...userData, uid: user.uid};
+          SP = '';
+          await syncToFirebase();
+          startRealtimeListeners();
+          loginSuccess(CU);
+          toast('Welcome back, ' + CU.name + '! 👋', 'success');
+        }
+      } catch(e) {
+        console.warn('[ATS] Auto-login failed:', e.message);
+      }
+    }
+  });
   checkPWAMode();
   document.getElementById('authScreen').classList.add('show');
   // Enter key triggers login
