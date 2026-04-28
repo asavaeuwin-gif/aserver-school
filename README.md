@@ -6,6 +6,20 @@ A secure school management platform built with **PHP, MySQL, HTML, CSS, and Java
 
 CyberEdu Portal is a multi-role school management system designed for schools, teachers, students, parents, and administrators.  
 It includes academic management, communication tools, attendance tracking, report cards, analytics, and cybersecurity features.
+## 📸 Screenshots
+## 📸 Screenshots
+
+### 🖥️ Admin Dashboard
+![Admin Dashboard](admin-dashboard.png)
+
+### 👨‍👩‍👧 Parent Dashboard
+![Parent Dashboard](parent-dashboard.png)
+
+### ✉️ Messaging Inbox
+![Inbox](inbox.png)
+
+### 📝 Report Card
+![Report Card](report-card.png)
 
 ## 🚀 Main Features
 
